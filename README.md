@@ -1,9 +1,10 @@
-# Angular 21 Auth BoilerPlate (Beginner Guide)
+﻿# Angular 21 Auth Boilerplate
 
-This project is a beginner-friendly Angular 21 boilerplate that demonstrates a complete authentication flow:
+A beginner-friendly Angular 21 boilerplate with a complete authentication flow.
 
+**Features:**
 - Email sign up + email verification
-- Login + logout
+- Login / logout
 - JWT auth header for API requests
 - Refresh tokens (cookie-based) + auto-refresh before access token expiry
 - Forgot password + reset password
@@ -11,154 +12,237 @@ This project is a beginner-friendly Angular 21 boilerplate that demonstrates a c
 - Admin area for account management
 - Profile area for viewing/updating your own account
 
-## Table of contents
+---
 
-[1] Prerequisites(#1-prerequisites)
-[2] Run the app (real API)(#2-run-the-app-real-api)
-[3] Run the app (fake backend, no API)(#3-run-the-app-fake-backend-no-api)
-[4] Using the app (what to click)(#4-using-the-app-what-to-click)
-[5] How authentication works(#5-how-authentication-works)
-[6] Authorization (roles + route guards)(#6-authorization-roles--route-guards)
-[7] Project structure (quick tour)(#7-project-structure-quick-tour)
-[8] Troubleshooting(#8-troubleshooting)
+## Table of Contents
 
-## [1] Prerequisites
+1. [Prerequisites](#1-prerequisites)
+2. [Clone & Run](#2-clone--run)
+3. [Run with Fake Backend (no API needed)](#3-run-with-fake-backend)
+4. [Run with a Real API](#4-run-with-a-real-api)
+5. [Using the App](#5-using-the-app)
+6. [How Authentication Works](#6-how-authentication-works)
+7. [Authorization](#7-authorization)
+8. [Project Structure](#8-project-structure)
+9. [Troubleshooting](#9-troubleshooting)
 
-- Node.js (LTS recommended)
-- npm (comes with Node.js)
-- (Optional) Angular CLI:
-  `npm i -g @angular/cli`
+---
 
-### 2) Run the app (real API)
+## 1. Prerequisites
 
-By default this project is set up to call a real API at:
+Make sure you have the following installed before continuing:
 
-`http://localhost:4000` (see `src/environments/environment.ts`)
+- [Node.js](https://nodejs.org/) (LTS version recommended)
+- npm (included with Node.js)
+- Angular CLI (optional but recommended):
 
-### Step 1: install packages
+```bash
+npm install -g @angular/cli
+```
 
-From the project root (where `package.json` is):
+---
+
+## 2. Clone & Run
+
+### Step 1 — Clone the repository
+
+```bash
+git clone https://github.com/g13-ter/angular-auth-boilerplate.git
+cd angular-auth-boilerplate
+```
+
+### Step 2 — Install dependencies
 
 ```bash
 npm install
-### C) Forgot password + reset password
+```
 
-1. Go to Forgot Password
-2. Enter your email and submit
-3. If you are using the fake backend, a “reset password email” will appear as an alert with a link
-4. Click the reset link and set a new password
+### Step 3 — Start the app
 
-### D) Profile and Admin areas
+```bash
+npm start
+```
 
-- Profile pages allow you to view and update your own account details.
-- The Admin area is restricted to accounts with the `Admin` role.
+The app will open automatically at `http://localhost:4200`.
 
-## 5) How authentication works
+> By default the app runs with a **fake backend** — no real API or database needed. See [section 3](#3-run-with-fake-backend) for details.
 
-This boilerplate uses two tokens:
+---
 
-- Access token (JWT): short-lived token used in the `Authorization: Bearer <token>` header
-- Refresh token: long-lived token stored in a cookie and sent with `withCredentials: true`
+## 3. Run with Fake Backend
 
-### The important pieces
+The fake backend is built into the app and runs entirely in the browser. It intercepts all HTTP calls and handles them in-memory using `localStorage`.
 
-- API base URL:
-  - `src/environments/environment.ts`
-- Account service (Login/Logout/refresh/register/etc.):
-  - `src/app/_services/account.service.ts`
-- App initializer (tries to refresh on first app load):
-  - `src/app/_helpers/app.initializer.ts`
-- JWT interceptor (adds the `Authorization` header for API calls):
-  - `src/app/_helpers/jwt.interceptor.ts`
-- Error interceptor (auto-logout on 401/403):
-  - `src/app/_helpers/error.interceptor.ts`
+It is **enabled by default** — just run `npm start` and everything works out of the box.
 
-### Flow: login
+**Default admin account:**
+
+| Email | Password | Role |
+|---|---|---|
+| `admin@example.com` | `admin` | Admin |
+
+You can also register new accounts through the UI.
+
+> To reset the fake backend data, clear `localStorage` for `localhost:4200` in your browser DevTools, or remove the key `angular-15-signup-verification-boilerplate-accounts`.
+
+---
+
+## 4. Run with a Real API
+
+### Step 1 — Set your API URL
+
+Edit `src/environments/environment.ts`:
+
+```ts
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:4000'   // <-- change this to your API URL
+};
+```
+
+### Step 2 — Disable the fake backend
+
+In `src/app/app.module.ts`, find and remove (or comment out) the `fakeBackend` entry in the `providers` array.
+
+### Step 3 — Start the app
+
+```bash
+npm start
+```
+
+Your API must expose the endpoints listed in [section 6](#6-how-authentication-works).
+
+---
+
+## 5. Using the App
+
+### A) Register & verify email
+
+1. Click **Register** and fill in the form
+2. With the fake backend, a verification link appears as an on-screen alert — click it
+3. With a real API, check your email for the verification link
+4. After verifying, log in with your credentials
+
+### B) Login / Logout
+
+- Use the **Login** page to sign in
+- Click **Logout** in the nav bar to sign out
+
+### C) Forgot password / Reset password
+
+1. Go to **Forgot Password** and enter your email
+2. Click the reset link (on-screen alert for fake backend, email for real API)
+3. Set a new password
+
+### D) Profile
+
+- View and update your own account details under the **Profile** section
+
+### E) Admin area
+
+- Only accounts with the `Admin` role can access `/admin`
+- Admins can view, create, edit, and delete accounts
+
+---
+
+## 6. How Authentication Works
+
+This app uses two tokens:
+
+| Token | Stored in | Lifetime |
+|---|---|---|
+| Access token (JWT) | Memory (`BehaviorSubject`) | Short-lived |
+| Refresh token | HttpOnly cookie | Long-lived |
+
+### Key files
+
+| File | Purpose |
+|---|---|
+| `src/environments/environment.ts` | API base URL |
+| `src/app/_services/account.service.ts` | Login, logout, register, refresh, etc. |
+| `src/app/_helpers/app.initializer.ts` | Restores session on page load |
+| `src/app/_helpers/jwt.interceptor.ts` | Attaches `Authorization: Bearer <token>` |
+| `src/app/_helpers/error.interceptor.ts` | Auto-logout on 401 / 403 |
+
+### Login flow
 
 1. Login component calls `AccountService.login(email, password)`
-2. The API returns an `Account` object that includes `jwtToken`
-3. The app stores the account in memory (a `BehaviorSubject`) and starts a refresh timer
-4. For future API requests, the JWT interceptor attaches `Authorization: Bearer ...`
+2. API returns an `Account` object with `jwtToken`
+3. Token is stored in memory and a refresh timer is scheduled
+4. All subsequent requests get `Authorization: Bearer ...` via the JWT interceptor
 
-### Flow: refresh token (important)
+### Refresh token flow
 
-1. The refresh token is sent to the API using cookies (`withCredentials: true`)
-2. The API responds with a new access token (`jwtToken`)
-3. The app schedules an automatic refresh about 1 minute before the access token expires
-4. When the app reloads page, `APP_INITIALIZER` calls refresh immediately to restore the session (if the cookie is still valid)
+1. On page load, `APP_INITIALIZER` calls the refresh endpoint to restore the session
+2. The refresh token cookie is sent automatically (`withCredentials: true`)
+3. A new access token is returned and the timer resets
 
-### Expected API endpoints
+### Required API endpoints
 
-The frontend calls these endpoints (base URL is `environment.apiUrl`):
+```
+POST   /accounts/authenticate
+POST   /accounts/refresh-token
+POST   /accounts/revoke-token
+POST   /accounts/register
+POST   /accounts/verify-email
+POST   /accounts/forgot-password
+POST   /accounts/validate-reset-token
+POST   /accounts/reset-password
+GET    /accounts              (Admin only)
+GET    /accounts/:id
+POST   /accounts              (Admin only)
+PUT    /accounts/:id
+DELETE /accounts/:id
+```
 
-- `POST /accounts/authenticate`
-- `POST /accounts/refresh-token`
-- `POST /accounts/revoke-token`
-- `POST /accounts/register`
-- `POST /accounts/verify-email`
-- `POST /accounts/forgot-password`
-- `POST /accounts/validate-reset-token`
-- `POST /accounts/reset-password`
-- `GET /accounts` (Admin)
-- `GET /accounts/:id`
-- `POST /accounts` (Admin)
-- `PUT /accounts/:id`
-- `DELETE /accounts/:id`
+---
 
-## 6) Authorization (roles + route guards)
+## 7. Authorization
 
-Routes are protected with `AuthGuard`:
+Routes are protected by `AuthGuard` (`src/app/_helpers/auth.guard.ts`):
 
-- If you are not logged in, you are redirected to `/account/login`
-- If you are logged in but don’t have the required role, you are redirected to `/`
+- Not logged in → redirected to `/account/login`
+- Logged in but insufficient role → redirected to `/`
 
-Role restrictions are applied using route data, for example:
+Role restrictions use the `Role` enum from `src/app/_models/role.ts` and are configured in `src/app/app-routing.module.ts`.
 
-- `/admin` requires `Role.Admin`
+---
 
-Key files:
+## 8. Project Structure
 
-src/app/helpers/auth.guard.ts
-src/app/models/role.ts
-src/app/app-routing.module.ts
+```
+src/app/
+├── _helpers/       Guards, interceptors, app initializer, fake backend
+├── _models/        Shared types: Account, Role, Alert
+├── _services/      AccountService, AlertService
+├── _components/    Shared UI components (e.g. Alert banner)
+├── account/        Auth screens: login, register, verify, forgot, reset
+├── profile/        User profile screens
+├── admin/          Admin-only screens (account list, add/edit)
+└── home/           Home screen
+```
 
-# 7) Project structure (quick tour)
+Bootstrap 5 is loaded via CDN in `src/index.html`.
 
-Most code lives under `src/app`:
+---
 
-- _services/   shared services (e.g. `AccountService`, `AlertService`)
-- _helpers/    cross-cutting helpers (guards, interceptors, app initializer, fake backend)
-- _models/     shared types and enums (Account, Role, Alert)
-- account/     auth screens (login/register/verify/forgot/reset)
-- profile/     user profile screens
-- admin/       admin-only screens for account management
+## 9. Troubleshooting
 
-The UI is styled with Bootstrap 5 via a CDN link in:
+### App redirects to login after page refresh
 
-src/index.html
+If using a real API, make sure it:
+- Sets a `refresh-token` HttpOnly cookie on login
+- Supports `POST /accounts/refresh-token`
 
-# 8) Troubleshooting
+### Cookies not being sent (cross-origin API)
 
-## The app redirects me back to login after refresh
-
-If you are using a real API, make sure it sets a refresh token cookie and supports `POST /accounts/refresh-token`.
-
-If your API runs on a different origin (different hostname/port), you must configure CORS to allow credentials and ensure cookies are set with the correct `SameSite`/`Secure` settings.
-
-### If I’m calling an API on another port and cookies aren’t being sent
-
-This frontend uses `withCredentials: true` for login/refresh/revoke, but the backend must also:
-
+This app uses `withCredentials: true` for auth requests. Your API must:
 - Enable CORS with credentials
 - Return `Access-Control-Allow-Credentials: true`
-- Allow the frontend origin in `Access-Control-Allow-Origin` (it cannot be `*` when using credentials)
-
-### I want to reset the fake backend data
-
-- Clear browser storage for the site, or remove the local storage key:
-  - `angular-15-signup-verification-boilerplate-accounts`
+- Set `Access-Control-Allow-Origin` to the exact frontend origin (not `*`)
 
 ### Run unit tests
 
 ```bash
-npm test# boilerplate-angular
+npm test
+```
